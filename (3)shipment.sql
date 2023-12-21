@@ -146,7 +146,6 @@ BEGIN
 
     SET NEW.order_amt = total_price;
 END;
-//
 DELIMITER ;
 
 -- CREATE VIEW ShippedOrdersView
