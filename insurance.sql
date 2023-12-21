@@ -115,14 +115,21 @@ FROM CAR C
 JOIN PARTICIPATED PA ON C.regno = PA.regno;
 
 DELIMITER //
+
 CREATE TRIGGER PreventExcessiveAccidents
 BEFORE INSERT ON PARTICIPATED
 FOR EACH ROW
 BEGIN
     DECLARE accidents_count INT;
+
     SELECT COUNT(*) INTO accidents_count
     FROM PARTICIPATED
     WHERE driver_id = NEW.driver_id AND YEAR(acc_date) = YEAR(NOW());
 
     IF accidents_count >= 3 THEN
-        SIGNAL SQLSTATE '45000
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Too many accidents in a year for this driver.';
+    END IF;
+END //
+
+DELIMITER ;
