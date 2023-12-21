@@ -62,6 +62,20 @@ VALUES
     (4, 180),
     (5, 200);
 
+-- Warehouse table
+CREATE TABLE Warehouse (
+    warehouseNo INT PRIMARY KEY,
+    city VARCHAR(50)
+);
+
+INSERT INTO Warehouse (warehouseNo, city)
+VALUES
+    (1, 'New York'),
+    (2, 'Chicago'),
+    (3, 'Los Angeles'),
+    (4, 'Houston'),
+    (5, 'San Francisco');
+
 -- Shipment table
 CREATE TABLE Shipment (
     orderNo INT,
@@ -79,20 +93,6 @@ VALUES
     (103, 3, '2022-04-15'),
     (104, 1, '2022-05-20'),
     (105, 2, '2022-06-25');
-
--- Warehouse table
-CREATE TABLE Warehouse (
-    warehouseNo INT PRIMARY KEY,
-    city VARCHAR(50)
-);
-
-INSERT INTO Warehouse (warehouseNo, city)
-VALUES
-    (1, 'New York'),
-    (2, 'Chicago'),
-    (3, 'Los Angeles'),
-    (4, 'Houston'),
-    (5, 'San Francisco');
 
 
 ----QUERIES----
