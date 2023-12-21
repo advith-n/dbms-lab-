@@ -115,6 +115,16 @@ FROM Customer C
 LEFT JOIN OrderTable O ON C.CustNo = O.custNo
 GROUP BY C.cname;
 
+-- Update the foreign key references in Shipment table
+UPDATE Shipment
+SET orderNo = NULL
+WHERE orderNo IN (SELECT orderNo FROM OrderTable WHERE custNo IN (SELECT CustNo FROM Customer WHERE cname = 'Kumar'));
+
+-- Then delete from OrderTable
+DELETE FROM OrderTable
+WHERE custNo IN (SELECT CustNo FROM Customer WHERE cname = 'Kumar');
+
+
 -- DELETE FROM Order
 DELETE FROM OrderTable
 WHERE custNo IN (SELECT CustNo FROM Customer WHERE cname = 'Kumar');
