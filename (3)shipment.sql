@@ -30,6 +30,20 @@ VALUES
     (104, '2022-04-25', 4, 800),
     (105, '2022-05-30', 2, 900);
 
+-- Item table
+CREATE TABLE Item (
+    itemNo INT PRIMARY KEY,
+    unitprice INT
+);
+
+INSERT INTO Item (itemNo, unitprice)
+VALUES
+    (1, 100),
+    (2, 150),
+    (3, 120),
+    (4, 180),
+    (5, 200);
+
 -- Order-Item table
 CREATE TABLE Order_Item (
     orderNo INT,
@@ -48,19 +62,6 @@ VALUES
     (104, 1, 4),
     (105, 2, 2);
 
--- Item table
-CREATE TABLE Item (
-    itemNo INT PRIMARY KEY,
-    unitprice INT
-);
-
-INSERT INTO Item (itemNo, unitprice)
-VALUES
-    (1, 100),
-    (2, 150),
-    (3, 120),
-    (4, 180),
-    (5, 200);
 
 -- Warehouse table
 CREATE TABLE Warehouse (
