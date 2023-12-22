@@ -97,7 +97,7 @@ FROM PERSON P
 JOIN OWNS O ON P.driver_id = O.driver_id
 JOIN PARTICIPATED PA ON O.driver_id = PA.driver_id
 JOIN ACCIDENT A ON PA.report_number = A.report_number
-WHERE P.name = 'Smith';
+WHERE P.name LIKE '%Smith';
 
 INSERT INTO ACCIDENT (report_number, acc_date, location)
 VALUES (106, '2022-02-18', 'Roundabout F');
@@ -114,22 +114,26 @@ SELECT DISTINCT C.model, C.year
 FROM CAR C
 JOIN PARTICIPATED PA ON C.regno = PA.regno;
 
+-- Create a trigger to prevent a driver from participating in more than 3 accidents in a given year
 DELIMITER //
-
-CREATE TRIGGER PreventExcessiveAccidents
+CREATE TRIGGER check_accidents_limit
 BEFORE INSERT ON PARTICIPATED
 FOR EACH ROW
 BEGIN
     DECLARE accidents_count INT;
+    
+    -- Count the number of accidents the driver has participated in during the current year
+    SELECT COUNT(*)
+    INTO accidents_count
+    FROM PARTICIPATED P
+    JOIN ACCIDENT A ON P.report_number = A.report_number
+    WHERE P.driver_id = NEW.driver_id AND YEAR(A.acc_date) = YEAR(NOW());
 
-    SELECT COUNT(*) INTO accidents_count
-    FROM PARTICIPATED
-    WHERE driver_id = NEW.driver_id AND YEAR(acc_date) = YEAR(NOW());
-
+    -- If the driver has already participated in 3 accidents this year, prevent the insertion
     IF accidents_count >= 3 THEN
         SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Too many accidents in a year for this driver.';
+        SET MESSAGE_TEXT = 'Driver cannot participate in more than 3 accidents in a given year';
     END IF;
-END //
-
+END;
+//
 DELIMITER ;
