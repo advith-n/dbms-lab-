@@ -1,159 +1,157 @@
--- Disable foreign key checks temporarily
-SET foreign_key_checks = 0;
 
--- DLOCATION table
-CREATE TABLE DLOCATION (
-    DNo INT PRIMARY KEY,
-    DLoc VARCHAR(255)
+create database company;
+use company;
+
+create table if not exists Employee(
+	ssn varchar(35) primary key,
+	name varchar(35) not null,
+	address varchar(255) not null,
+	sex varchar(7) not null,
+	salary int not null,
+	super_ssn varchar(35),
+	d_no int,
+	foreign key (super_ssn) references Employee(ssn) on delete CASCADE ON UPDATE CASCADE
+    -- foreign key (d_no) references Department(d_no) on delete cascade ON UPDATE CASCADE
 );
 
-INSERT INTO DLOCATION (DNo, DLoc)
-VALUES
-    (1, 'New York'),
-    (2, 'Chicago'),
-    (3, 'Los Angeles'),
-    (4, 'San Francisco'),
-    (5, 'Miami');
-
--- DEPARTMENT table
-CREATE TABLE DEPARTMENT (
-    DNo INT PRIMARY KEY,
-    DName VARCHAR(255),
-    MgrSSN VARCHAR(11),
-    MgrStartDate DATE,
-    FOREIGN KEY (MgrSSN) REFERENCES EMPLOYEE(SSN)
+create table if not exists Department(
+	d_no int primary key,
+	dname varchar(100) not null,
+	mgr_ssn varchar(35),
+	mgr_start_date date,
+	foreign key (mgr_ssn) references Employee(ssn) on delete cascade ON UPDATE CASCADE
 );
 
-INSERT INTO DEPARTMENT (DNo, DName, MgrSSN, MgrStartDate)
-VALUES
-    (1, 'HR', '123-45-6789', '2021-01-01'),
-    (2, 'IT', '345-67-8901', '2022-02-15'),
-    (3, 'Accounts', '345-67-8901', '2023-03-20'),
-    (4, 'Marketing', '123-45-6789', '2021-04-01'),
-    (5, 'Operations', '456-78-9012', '2022-05-15');
-
--- Enable foreign key checks
-SET foreign_key_checks = 1;
-
--- EMPLOYEE table
-CREATE TABLE EMPLOYEE (
-    SSN VARCHAR(11) PRIMARY KEY,
-    Name VARCHAR(255),
-    Address VARCHAR(255),
-    Sex CHAR,
-    Salary DECIMAL,
-    SuperSSN VARCHAR(11),
-    DNo INT,
-    FOREIGN KEY (SuperSSN) REFERENCES EMPLOYEE(SSN),
-    FOREIGN KEY (DNo) REFERENCES DEPARTMENT(DNo)
+create table if not exists DLocation(
+	d_no int not null,
+	d_loc varchar(100) not null,
+	foreign key (d_no) references Department(d_no) on delete cascade ON UPDATE CASCADE
 );
 
-INSERT INTO EMPLOYEE (SSN, Name, Address, Sex, Salary, SuperSSN, DNo)
-VALUES
-    ('123-45-6789', 'John Doe', '123 Main St', 'M', 80000, NULL, 1),
-    ('234-56-7890', 'Alice Smith', '456 Oak St', 'F', 70000, '123-45-6789', 1),
-    ('345-67-8901', 'Bob Johnson', '789 Pine St', 'M', 60000, '123-45-6789', 2),
-    ('456-78-9012', 'Eve Wilson', '101 Elm St', 'F', 85000, '345-67-8901', 2),
-    ('567-89-0123', 'Charlie Brown', '202 Cedar St', 'M', 75000, '345-67-8901', 3);
-
--- PROJECT table
-CREATE TABLE PROJECT (
-    PNo INT PRIMARY KEY,
-    PName VARCHAR(255),
-    PLocation VARCHAR(255),
-    DNo INT,
-    FOREIGN KEY (DNo) REFERENCES DEPARTMENT(DNo)
+create table if not exists Project(
+	p_no int primary key,
+	p_name varchar(25) not null,
+	p_loc varchar(25) not null,
+	d_no int not null,
+	foreign key (d_no) references Department(d_no) on delete cascade ON UPDATE CASCADE
 );
 
-INSERT INTO PROJECT (PNo, PName, PLocation, DNo)
-VALUES
-    (101, 'HR Management', 'New York', 1),
-    (102, 'Software Development', 'Chicago', 2),
-    (103, 'Financial Analysis', 'Los Angeles', 3),
-    (104, 'Employee Training', 'New York', 1),
-    (105, 'Database Optimization', 'Chicago', 2);
-
--- WORKS_ON table
-CREATE TABLE WORKS_ON (
-    SSN VARCHAR(11),
-    PNo INT,
-    Hours INT,
-    PRIMARY KEY (SSN, PNo),
-    FOREIGN KEY (SSN) REFERENCES EMPLOYEE(SSN),
-    FOREIGN KEY (PNo) REFERENCES PROJECT(PNo)
+create table if not exists WorksOn(
+	ssn varchar(35) not null,
+	p_no int not null,
+	hours int not null default 0,
+	foreign key (ssn) references Employee(ssn) on delete cascade ON UPDATE CASCADE,
+	foreign key (p_no) references Project(p_no) on delete cascade ON UPDATE CASCADE
 );
 
-INSERT INTO WORKS_ON (SSN, PNo, Hours)
-VALUES
-    ('123-45-6789', 101, 40),
-    ('234-56-7890', 102, 30),
-    ('345-67-8901', 103, 35),
-    ('456-78-9012', 104, 25),
-    ('567-89-0123', 105, 20);
+INSERT INTO Employee VALUES
+("01NB235", "Chandan_Scott","Siddartha Nagar, Mysuru", "Male", 1500000, "01NB235", 5),
+("01NB354", "Employee_2", "Lakshmipuram, Mysuru", "Female", 1200000,"01NB235", 2),
+("02NB254", "Employee_3", "Pune, Maharashtra", "Male", 1000000,"01NB235", 4),
+("03NB653", "Employee_4", "Hyderabad, Telangana", "Male", 2500000, "01NB354", 5),
+("04NB234", "Employee_5", "JP Nagar, Bengaluru", "Female", 1700000, "01NB354", 1);
 
 
--- 1. List of Project Numbers for Projects Involving Employee 'Scott'
-SELECT DISTINCT P.PNo
-FROM PROJECT P
-JOIN WORKS_ON W ON P.PNo = W.PNo
-JOIN EMPLOYEE E ON W.SSN = E.SSN
-WHERE E.Name LIKE '%Scott%'
-   OR E.SSN IN (SELECT MgrSSN FROM DEPARTMENT WHERE DNo = P.DNo);
+INSERT INTO Department VALUES
+(001, "Human Resources", "01NB235", "2020-10-21"),
+(002, "Quality Assesment", "03NB653", "2020-10-19"),
+(003,"System assesment","04NB234","2020-10-27"),
+(005,"Production","02NB254","2020-08-16"),
+(004,"Accounts","01NB354","2020-09-4");
 
--- 2. Salaries After 10% Raise for Employees Working on 'IoT' Project
-UPDATE EMPLOYEE
-SET Salary = Salary * 1.10
-WHERE SSN IN (SELECT SSN FROM WORKS_ON WHERE PNo = (SELECT PNo FROM PROJECT WHERE PName = 'IoT'));
 
--- 3. Sum, Maximum, Minimum, and Average Salaries in 'Accounts' Department
-SELECT
-    SUM(Salary) AS TotalSalaries,
-    MAX(Salary) AS MaxSalary,
-    MIN(Salary) AS MinSalary,
-    AVG(Salary) AS AvgSalary
-FROM EMPLOYEE
-WHERE DNo = (SELECT DNo FROM DEPARTMENT WHERE DName = 'Accounts');
+INSERT INTO DLocation VALUES
+(001, "Jaynagar, Bengaluru"),
+(002, "Vijaynagar, Mysuru"),
+(003, "Chennai, Tamil Nadu"),
+(004, "Mumbai, Maharashtra"),
+(005, "Kuvempunagar, Mysuru");
 
--- 4. Employees Working on All Projects of Department 5 (Using NOT EXISTS)
-SELECT E.Name
-FROM EMPLOYEE E
-WHERE NOT EXISTS (
-    SELECT PNo
-    FROM PROJECT P
-    WHERE P.DNo = 5
-    AND NOT EXISTS (
-        SELECT SSN
-        FROM WORKS_ON W
-        WHERE W.PNo = P.PNo AND W.SSN = E.SSN
-    )
-);
+INSERT INTO Project VALUES
+(241563, "System Testing", "Mumbai, Maharashtra", 004),
+(532678, "IOT", "JP Nagar, Bengaluru", 001),
+(453723, "Product Optimization", "Hyderabad, Telangana", 005),
+(278345, "Yeild Increase", "Kuvempunagar, Mysuru", 005),
+(426784, "Product Refinement", "Saraswatipuram, Mysuru", 002);
 
--- 5. Departments with More Than Five Employees Making Over Rs. 6,00,000
-SELECT D.DNo, COUNT(*) AS NumEmployees
-FROM DEPARTMENT D
-JOIN EMPLOYEE E ON D.DNo = E.DNo
-WHERE E.Salary > 600000
-GROUP BY D.DNo
-HAVING COUNT(*) > 5;
+INSERT INTO WorksOn VALUES
+("01NB235", 278345, 5),
+("01NB354", 426784, 6),
+("04NB234", 532678, 3),
+("02NB254", 241563, 3),
+("03NB653", 453723, 6);
 
--- 6. Create a View Showing Employee Name, Department Name, and Location
-CREATE VIEW EmployeeDetails AS
-SELECT E.Name AS EmployeeName, D.DName AS DepartmentName, DL.DLoc AS DepartmentLocation
-FROM EMPLOYEE E
-JOIN DEPARTMENT D ON E.DNo = D.DNo
-JOIN DLOCATION DL ON D.DNo = DL.DNo;
+alter table Employee add constraint foreign key (d_no) references Department(d_no) on delete cascade ON UPDATE CASCADE;
 
--- 7. Create a Trigger to Prevent Project Deletion If Currently Worked On
+SELECT * FROM Department;
+SELECT * FROM Employee;
+SELECT * FROM DLocation;
+SELECT * FROM Project;
+SELECT * FROM WorksOn;
+
+
+-- Make a list of all project numbers for projects that involve an employee whose last name is ‘Scott’, either as a worker or as a manager of the department that controls the project.
+
+select p_no,p_name,name from Project p, Employee e where p.d_no=e.d_no and e.name like "%Scott";
+
+
+-- Show the resulting salaries if every employee working on the ‘IoT’ project is given a 10 percent raise
+select w.ssn,name,salary as old_salary,salary*1.1 as new_salary from WorksOn w join Employee e where w.ssn=e.ssn and w.p_no=(select p_no from Project where p_name="IOT") ;
+
+
+-- OR--
+select e.name,e.salary as old_salary,e.salary+e.salary*0.1 as increased_salary
+from Employee e,Department d,project p
+where e.d_no=d.d_no and p.d_no=d.d_no and p.p_name="IOT" ;
+
+
+-- Find the sum of the salaries of all employees of the ‘Accounts’ department, as well as the maximum salary, the minimum salary, and the average salary in this department
+select sum(salary) as sal_sum, max(salary) as sal_max,min(salary) as sal_min,avg(salary) as sal_avg from Employee e join Department d on e.d_no=d.d_no where d.dname="Accounts";
+
+
+-- OR -- 
+
+select sum(salary) as total_salary, max(salary) as maximum_salary,min(salary) as minimum_salary,avg(salary) as average_salary
+from Employee e,Department d
+where e.d_no=d.d_no and d.dname="Accounts";
+
+
+-- Retrieve the name of each employee who works on all the projects controlled by department number 1 (use NOT EXISTS operator).
+select Employee.ssn,name,d_no from Employee where not exists
+    (select p.p_no from Project p where p.d_no=1 and p_no not in
+    	(select w.p_no from WorksOn w where w.ssn=Employee.ssn));
+
+
+-- For each department that has more than one employees, retrieve the department number and the number of its employees who are making more than Rs. 6,00,000.
+select d.d_no, count(*)
+from Department d 
+join Employee e on e.d_no=d.d_no
+where salary>600000 
+group by d.d_no having count(*) >1;
+
+
+
+
+-- Create a view that shows project name, location and dept.
+create view display as 
+select e.name,d.dname,dl.d_loc
+from Employee e,Department d,DLocation dl
+where e.d_no=d.d_no and dl.d_no=d.d_no;
+
+select * from display;
+
+-- Create a trigger that prevents a project from being deleted if it is currently being worked by any employee.
+
 DELIMITER //
-
-CREATE TRIGGER prevent_project_deletion
-BEFORE DELETE ON PROJECT
-FOR EACH ROW
+create trigger PreventDelete
+before delete on Project
+for each row
 BEGIN
-    IF EXISTS (SELECT 1 FROM WORKS_ON WHERE PNo = OLD.PNo) THEN
-        SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Cannot delete project currently being worked on.';
-    END IF;
-END //
+	IF EXISTS (select * from WorksOn where p_no=old.p_no) THEN
+		signal sqlstate '45000' set message_text='This project has an employee assigned';
+	END IF;
+END; //
 
 DELIMITER ;
+
+delete from Project where p_no=241563; -- Will give error 
