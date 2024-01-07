@@ -1,141 +1,154 @@
--- STUDENT table
-CREATE TABLE STUDENT (
-    regno VARCHAR(20) PRIMARY KEY,
-    name VARCHAR(255),
-    major VARCHAR(50),
-    bdate DATE
+
+create database enrollment;
+use enrollment;
+
+create table Student(
+	regno varchar(13) primary key,
+	name varchar(25) not null,
+	major varchar(25) not null,
+	bdate date not null
 );
 
-INSERT INTO STUDENT (regno, name, major, bdate)
-VALUES
-    ('S001', 'John Doe', 'CS', '2000-01-10'),
-    ('S002', 'Alice Smith', 'EE', '1999-05-15'),
-    ('S003', 'Bob Johnson', 'CS', '2001-03-20'),
-    ('S004', 'Eve Wilson', 'ME', '1998-08-25'),
-    ('S005', 'Charlie Brown', 'IT', '2002-02-28');
-
--- COURSE table
-CREATE TABLE COURSE (
-    course_id INT PRIMARY KEY,
-    cname VARCHAR(255),
-    dept VARCHAR(50)
+create table Course(
+	course int primary key,
+	cname varchar(30) not null,
+	dept varchar(100) not null
 );
 
-INSERT INTO COURSE (course_id, cname, dept)
-VALUES
-    (101, 'Database Management System', 'CS'),
-    (102, 'Algorithm Design', 'CS'),
-    (103, 'Digital Electronics', 'EE'),
-    (104, 'Thermodynamics', 'ME'),
-    (105, 'Web Development', 'IT');
-
--- ENROLL table
-CREATE TABLE ENROLL (
-    regno VARCHAR(20),
-    course_id INT,
-    sem INT,
-    marks INT,
-    PRIMARY KEY (regno, course_id, sem),
-    FOREIGN KEY (regno) REFERENCES STUDENT(regno),
-    FOREIGN KEY (course_id) REFERENCES COURSE(course_id)
+create table Enroll
+(
+	regno varchar(13),
+	course int,
+	sem int not null,
+	marks int not null,
+	foreign key(regno) references Student(regno) on delete cascade ON UPDATE CASCADE,
+	foreign key(course) references Course(course) on delete cascade ON UPDATE CASCADE
 );
 
-INSERT INTO ENROLL (regno, course_id, sem, marks)
-VALUES
-    ('S001', 101, 2, 85),
-    ('S002', 101, 2, 75),
-    ('S003', 102, 2, 92),
-    ('S004', 102, 2, 68),
-    ('S005', 101, 2, 78);
-
--- TEXT table
-CREATE TABLE TEXT (
-    book_ISBN INT PRIMARY KEY,
-    book_title VARCHAR(255),
-    publisher VARCHAR(50),
-    author VARCHAR(255)
+create table TextBook(
+	bookIsbn int not null,
+	book_title varchar(40) not null,
+	publisher varchar(25) not null,
+	author varchar(25) not null,
+	primary key(bookIsbn)
 );
 
-INSERT INTO TEXT (book_ISBN, book_title, publisher, author)
-VALUES
-    (1001, 'Database Systems', 'Pearson', 'Ramez Elmasri'),
-    (1002, 'Introduction to Algorithms', 'MIT Press', 'Thomas H. Cormen'),
-    (1003, 'Digital Fundamentals', 'Pearson', 'Floyd Thomas'),
-    (1004, 'Engineering Thermodynamics', 'Wiley', 'Yunus A. Cengel'),
-    (1005, 'HTML and CSS: Design and Build Websites', 'Wiley', 'Jon Duckett');
-
--- BOOK_ADOPTION table
-CREATE TABLE BOOK_ADOPTION (
-    course_id INT,
-    sem INT,
-    book_ISBN INT,
-    PRIMARY KEY (course_id, sem, book_ISBN),
-    FOREIGN KEY (course_id) REFERENCES COURSE(course_id),
-    FOREIGN KEY (book_ISBN) REFERENCES TEXT(book_ISBN)
+create table BookAdoption(
+	course int not null,
+	sem int not null,
+	bookIsbn int not null,
+	foreign key(bookIsbn) references TextBook(bookIsbn) on delete cascade ON UPDATE CASCADE,
+	foreign key(course) references Course(course) on delete cascade ON UPDATE CASCADE
 );
 
-INSERT INTO BOOK_ADOPTION (course_id, sem, book_ISBN)
-VALUES
-    (101, 2, 1001),
-    (101, 2, 1003),
-    (102, 2, 1002),
-    (103, 2, 1003),
-    (105, 2, 1005);
----QUERIES-----
--- Add a new text book and make it adopted by a department
-INSERT INTO TEXT (book_ISBN, book_title, publisher, author)
-VALUES (1006, 'New Database Book', 'New Publisher', 'New Author');
+INSERT INTO Student VALUES
+("01HF235", "Student_1", "CSE", "2001-05-15"),
+("01HF354", "Student_2", "Literature", "2002-06-10"),
+("01HF254", "Student_3", "Philosophy", "2000-04-04"),
+("01HF653", "Student_4", "History", "2003-10-12"),
+("01HF234", "Student_5", "Computer Economics", "2001-10-10");
 
-INSERT INTO BOOK_ADOPTION (course_id, sem, book_ISBN)
-VALUES (101, 3, 1006);
+INSERT INTO Course VALUES
+(001, "DBMS", "CS"),
+(002, "Literature", "English"),
+(003, "Philosophy", "Philosphy"),
+(004, "History", "Social Science"),
+(005, "Computer Economics", "CS");
 
--- List text books in alphabetical order for CS courses with more than two books
-SELECT BA.course_id, BA.sem, BA.book_ISBN, T.book_title
-FROM BOOK_ADOPTION BA
-JOIN TEXT T ON BA.book_ISBN = T.book_ISBN
-JOIN COURSE C ON BA.course_id = C.course_id
-WHERE C.dept = 'CS'
-GROUP BY BA.book_ISBN
-HAVING COUNT(*) > 2
-ORDER BY T.book_title;
+INSERT INTO Enroll VALUES
+("01HF235", 001, 5, 85),
+("01HF354", 002, 6, 87),
+("01HF254", 003, 3, 95),
+("01HF653", 004, 3, 80),
+("01HF234", 005, 5, 75);
 
--- List departments with all adopted books published by a specific publisher
-SET @target_publisher = 'Pearson';
+INSERT INTO TextBook VALUES
+(241563, "Operating Systems", "Pearson", "Silberschatz"),
+(532678, "Complete Works of Shakesphere", "Oxford", "Shakesphere"),
+(453723, "Immanuel Kant", "Delphi Classics", "Immanuel Kant"),
+(278345, "History of the world", "The Times", "Richard Overy"),
+(426784, "Behavioural Economics", "Pearson", "David Orrel");
 
-SELECT C.dept
-FROM COURSE C
-WHERE NOT EXISTS (
-    SELECT 1
-    FROM BOOK_ADOPTION BA
-    JOIN TEXT T ON BA.book_ISBN = T.book_ISBN
-    WHERE BA.course_id = C.course_id
-    AND T.publisher != @target_publisher
-);
+INSERT INTO BookAdoption VALUES
+(001, 5, 241563),
+(002, 6, 532678),
+(003, 3, 453723),
+(004, 3, 278345),
+(001, 6, 426784);
 
--- List students with maximum marks in 'DBMS' course
-SELECT E.regno, E.marks
-FROM ENROLL E
-WHERE E.course_id = 101
-ORDER BY E.marks DESC
-LIMIT 1;
+select * from Student;
+select * from Course;
+select * from Enroll;
+select * from BookAdoption;
+select * from TextBook;
 
--- Create a view to display courses opted by a student with marks
-CREATE VIEW StudentCourses AS
-SELECT E.regno, E.course_id, E.sem, E.marks, C.cname
-FROM ENROLL E
-JOIN COURSE C ON E.course_id = C.course_id;
 
--- Create a trigger to prevent enrollment with marks less than 40
+-- Demonstrate how you add a new text book to the database and make this book be adopted by some department.
+insert into TextBook values
+(123456, "Chandan The Autobiography", "Pearson", "Chandan");
+
+insert into BookAdoption values
+(001, 5, 123456);
+
+
+-- Produce a list of text books (include Course #, Book-ISBN, Book-title) in the alphabetical order for courses offered by the ‘CS’ department that use more than two books.
+SELECT c.course,t.bookIsbn,t.book_title
+     FROM Course c,BookAdoption ba,TextBook t
+     WHERE c.course=ba.course
+     AND ba.bookIsbn=t.bookIsbn
+     AND c.dept='CS'
+     AND 2<(
+     SELECT COUNT(bookIsbn)
+     FROM BookAdoption b
+     WHERE c.course=b.course)
+     ORDER BY t.book_title;
+
+
+-- List any department that has all its adopted books published by a specific publisher.
+SELECT DISTINCT c.dept
+FROM TextBook t,BookAdoption b,Course c
+WHERE t.bookIsbn=b.bookIsbn and b.course=c.course and t.publisher="Pearson";
+
+-- List the students who have scored maximum marks in ‘DBMS’ course.
+
+select name from Student s, Enroll e, Course c
+where s.regno=e.regno and e.course=c.course and c.cname="DBMS" and e.marks in (select max(marks) from Enroll e1, Course c1 where c1.cname="DBMS" and c1.course=e1.course);
+
+
+-- OR -- 
+select s.name 
+from Student s,Enroll e,Course c
+where s.regno=e.regno and c.course=e.course and e.marks=(select max(marks)
+                                                            from Enroll
+                                                            join Course using (course)
+                                                            where Course.cname="DBMS");
+
+
+-- Create a view to display all the courses opted by a student along with marks obtained.
+create view CoursesOptedByStudent as
+select c.cname, e.marks from Course c, Enroll e
+where e.course=c.course and e.regno="01HF235";
+
+select * from CoursesOptedByStudent;
+
+
+
+
+
+
+
+-- Create a trigger that prevents a student from enrolling in a course if the marks pre_requisit is less than the given threshold 
 DELIMITER //
-CREATE TRIGGER CheckMarksTrigger
-BEFORE INSERT ON ENROLL
-FOR EACH ROW
+create  trigger PreventEnrollment
+before insert on Enroll
+for each row
 BEGIN
-    IF NEW.marks < 40 THEN
-        SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Cannot enroll with marks less than 40';
-    END IF;
-END //
+	IF (new.marks<40) THEN
+		signal sqlstate '45000' set message_text='Marks below 40 cannot be enrolled';
+	END IF;
+END;//
+
 DELIMITER ;
 
-
+INSERT INTO Enroll VALUES
+("01HF235", 002, 5, 39); -- Gives error since marks is less than 40
