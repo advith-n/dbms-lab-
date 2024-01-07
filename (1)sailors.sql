@@ -1,137 +1,149 @@
--- SAILORS table
-CREATE TABLE SAILORS (
-    sid INT PRIMARY KEY,
-    sname VARCHAR(50),
-    rating INT,
-    age INT
-);
+CREATE DATABASE sailor10;
 
-INSERT INTO SAILORS (sid, sname, rating, age)
-VALUES
-    (1, 'John', 8, 30),
-    (2, 'Albert', 9, 35),
-    (3, 'Eve', 7, 28),
-    (4, 'Bob', 8, 32),
-    (5, 'Alice', 7, 29);
+USE sailor10;
 
--- BOAT table
-CREATE TABLE BOAT (
-    bid INT PRIMARY KEY,
-    bname VARCHAR(50),
-    color VARCHAR(20)
-);
+CREATE TABLE sailors(
+sid INT PRIMARY KEY,
+sname VARCHAR (30),
+rating INT,
+age INT);
 
-INSERT INTO BOAT (bid, bname, color)
-VALUES
-    (101, 'Boat1', 'Red'),
-    (102, 'Boat2', 'Blue'),
-    (103, 'Boat3', 'Green'),
-    (104, 'Boat4', 'Yellow'),
-    (105, 'Boat5', 'White');
+CREATE TABLE boat(
+bid INT PRIMARY KEY,
+bname VARCHAR(30),
+color VARCHAR(15));
 
--- RESERVERS table
-CREATE TABLE RESERVERS (
-    sid INT,
-    bid INT,
-    date DATE,
-    PRIMARY KEY (sid, bid),
-    FOREIGN KEY (sid) REFERENCES SAILORS(sid),
-    FOREIGN KEY (bid) REFERENCES BOAT(bid)
-);
+CREATE TABLE reserves(
+sid INT ,
+bid INT,
+date DATE,
+FOREIGN KEY (sid) REFERENCES sailors(sid),
+FOREIGN KEY (bid) REFERENCES boat(bid));
 
-INSERT INTO RESERVERS (sid, bid, date)
-VALUES
-    (1, 101, '2023-01-01'),
-    (2, 103, '2023-02-15'),
-    (3, 104, '2023-03-20'),
-    (4, 101, '2023-04-10'),
-    (5, 102, '2023-05-05');
+INSERT INTO sailors VALUES
+(31,'Albert',7,45),
+(32,'Victor',9,50),
+(33,'Stormy',10,35),
+(34,'Mandy',8,28),
+(35,'Randy',6,25),
+(36,'NeelAmstormg',9,47);
+ 
+INSERT INTO boat VALUES
+(101,'Boat-1','Green'),
+(102,'Boat-2','Red'),
+(103,'Boat-3','Blue'),
+(104,'Boat-4','Grey'),
+(105,'Boat-5','White');
 
--- COLORS table
-CREATE TABLE COLORS (
-    color VARCHAR(20) PRIMARY KEY
-);
 
-INSERT INTO COLORS (color)
-VALUES
-    ('Red'),
-    ('Blue'),
-    ('Green'),
-    ('Yellow'),
-    ('White');
----queries
------Find the colors of boats reserved by Albert:
-SELECT DISTINCT B.color
-FROM BOAT B
-JOIN RESERVERS R ON B.bid = R.bid
-JOIN SAILORS S ON R.sid = S.sid
-WHERE S.sname = 'Albert';
+INSERT INTO reserves VALUES
+(31,101,'2023-11-25'),
+(31,103,'2023-08-30'),
+(31,105,'2023-12-22'),
+(32,102,'2023-11-17'),
+(32,104,'2023-08-17'),
+(32,105,'2023-10-17'),
+(33,102,'2023-12-10'),
+(33,101,'2023-12-22'),
+(34,102,'2023-12-22');
 
----
+SELECT * FROM sailors;
 
-SELECT DISTINCT S.sid
-FROM SAILORS S
-LEFT JOIN RESERVERS R ON S.sid = R.sid
-WHERE S.rating >= 8 OR R.bid = 103;
+SELECT * FROM boat;
 
-SELECT sname
-FROM SAILORS
+SELECT * FROM reserves;
+
+-- Find the colours of boats reserved by Albert
+    
+  select color from boat
+join reserves r using(bid)
+join sailors s using(sid)
+where s.sname="Albert";
+    
+-- Find all sailor id’s of sailors who have a rating of at least 8 or reserved boat 103
+SELECT sid
+FROM sailors 
+WHERE rating>=8 OR (
+	 SELECT sid 
+     FROM reserves
+     WHERE bid=103);
+     
+-- Find the names of sailors who have not reserved a boat, whose name contains the string “storm”. Order the names in ascending order.
+SELECT sname 
+FROM sailors 
 WHERE sid NOT IN (
-    SELECT DISTINCT R.sid
-    FROM RESERVERS R
-    JOIN BOAT B ON R.bid = B.bid
-    WHERE B.bname LIKE '%storm%'
-)
-ORDER BY sname ASC;
+	SELECT sid 
+    FROM reserves 
+    WHERE bid IN(
+		SELECT bid 
+        FROM boat where bname LIKE '%storm%'));
+    
+-- Find the names of sailors who have reserved all boats.   **********
+select sname from sailors s where not exists
+	(select * from boat b where not exists
+		(select * from reserves r where r.sid=s.sid and b.bid=r.bid));
+        
+
+INSERT INTO reserves VALUES
+(31,102,'2023-10-01'),
+(31,104,'2023-11-01');
+
+-- Find the name and age of the oldest sailor. 
+SELECT sname,age
+FROM sailors 
+WHERE age=(SELECT MAX(age)
+FROM sailors);
 
 
-SELECT S.sname
-FROM SAILORS S
-WHERE NOT EXISTS (
-    SELECT B.bid
-    FROM BOAT B
-    WHERE NOT EXISTS (
-        SELECT R.bid
-        FROM RESERVERS R
-        WHERE R.sid = S.sid AND R.bid = B.bid
-    )
-);
+-- OR  --
+select sname,age 
+from sailors
+order by age desc limit 1;
 
 
-    SELECT sname, age
-FROM SAILORS
-ORDER BY age DESC
-LIMIT 1;
+-- For each boat which was reserved by at least 5 sailors with age >= 40, find the boat id and the average age of such sailors.
+-- but here 2 instead of 5 sailors
+select b.bid, avg(s.age) as average_age  
+from sailors s, boat b, reserves r
+where r.sid=s.sid and r.bid=b.bid and s.age>=40
+group by bid
+having 2<=count(distinct r.sid);
 
-SELECT R.bid, AVG(S.age) AS avg_age
-FROM RESERVERS R
-JOIN SAILORS S ON R.sid = S.sid
-WHERE S.age >= 40
-GROUP BY R.bid
-HAVING COUNT(DISTINCT R.sid) >= 5;
+-- Create a view that shows the names and colours of all the boats that have been reserved by a sailor with a specific rating.
+create view specific_rating as
+SELECT DISTINCT bname, color
+FROM reserves
+JOIN boat b USING (bid)
+JOIN sailors s USING (sid)
+WHERE s.rating=10;
 
-CREATE VIEW BoatReservations AS
-SELECT S.sname, B.color
-FROM SAILORS S
-JOIN RESERVERS R ON S.sid = R.sid
-JOIN BOAT B ON R.bid = B.bid;
+select * from specific_rating;
+
+-- OR--
+
+create view display as
+select distinct b.bname,b.color
+from boat b,sailors s,reserves r
+where b.bid=r.bid and s.sid=r.sid and s.rating=10;
+
+select * from display;
+
+
+
+-- Trigger that prevents boats from being deleted if they have active reservation
 
 DELIMITER //
-CREATE TRIGGER PreventDeleteBoat
-BEFORE DELETE ON BOAT
-FOR EACH ROW
+create trigger CheckAndDelete
+before delete on boat
+for each row
 BEGIN
-    DECLARE reservation_count INT;
-    SELECT COUNT(*) INTO reservation_count
-    FROM RESERVERS
-    WHERE bid = OLD.bid;
+	IF EXISTS (select * from reserves where bid=old.bid) THEN
+		SIGNAL SQLSTATE '45000' SET message_text='Boat is reserved and hence cannot be deleted';
+	END IF;
+END;//
 
-    IF reservation_count > 0 THEN
-        SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Cannot delete boat with active reservations';
-    END IF;
-END;
-//
 DELIMITER ;
-DELETE FROM BOAT WHERE bid = 101;
 
+
+DELETE FROM boat
+WHERE bid =103;
